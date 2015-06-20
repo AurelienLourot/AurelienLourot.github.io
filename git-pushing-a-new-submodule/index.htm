@@ -1,0 +1,438 @@
+<!----------------------------------------------------------------------------
+| Title:     Git: Pushing a new submodule                                    |
+| Developer: Aurelien LOUROT                                                 |
+|            aurelien(dot)lourot(at)gmail(dot)com                            |
+----------------------------------------------------------------------------->
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta name="description" content="Git: Pushing a new submodule"/>
+        <meta name="keywords" content="git, push, submodule"/>
+        <title>Git: Pushing a new submodule</title>
+        
+        <style>
+            body
+            {
+                background-color: #333333;
+                font-family: Verdana, Helvetica, Arial;
+                padding: 10px;
+            }
+            
+            div.frame
+            {
+                text-align: center;
+                width: 100%;
+            }
+            
+            div.title
+            {
+                text-align: center;
+                width: 100%;
+            }
+            
+            table.frame
+            {
+                background-color: #ffffff;
+                width: 800pt;
+                margin: auto;
+                border-spacing: 1px;
+            }
+            
+            table.title
+            {
+                margin: auto;
+            }
+            
+            tr.frame
+            {
+            }
+            
+            tr.title
+            {
+            }
+            
+            td.frame
+            {
+                border-width: 5px;
+                border-style: solid;
+                border-color: #000000;
+                padding: 20px;
+            }
+            
+            td.title
+            {
+            }
+            
+            h1
+            {
+                margin: 0;
+            }
+            
+            h2
+            {
+                margin-top: 40px;
+            }
+            
+            p.signature
+            {
+                text-align: right;
+                margin-bottom: 10px;
+            }
+            
+            a
+            {
+                color: #3355cc;
+                text-decoration: none;
+            }
+            
+            a:hover
+            {
+                text-decoration: underline;
+            }
+            
+            pre
+            {
+                background-color: #eeeeee;
+                border-width: 1px;
+                border-style: solid;
+                border-color: #888888;
+                margin-left: 20px;
+                margin-right: 50px;
+                padding: 2px 5px;
+                line-height: 135%;
+            }
+            
+            code
+            {
+                font-size: 10pt;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="frame">
+            <table class="frame">
+                <tr class="frame">
+                    <td class="frame">
+                    
+<!----------------------------------------------------------- CONTENT ------->
+
+<div class="title"><table class="title">
+    <tr class="title"><td class="title"><h1>Git: Pushing a new submodule</h1></td></tr>
+    <tr class="title"><td class="title"><p class="signature">-- On 2012-12-19 by Aurelien Lourot</p></td></tr>
+</table></div>
+
+<p>This article is about pushing, from a clone, a new submodule into an 
+existing Git repository. After having clarified what a submodule is, it
+provides a solution. Indeed an incorrect comprehension of the concept of 
+submodule can make this task quite difficult. </p>
+
+<h2>Situation</h2>
+
+<p>You have been working on your <i>local</i> workstation in two separate Git 
+repositories for a long time: 
+<ul>
+    <li>A: distributed repository composed of <code>local:A</code> (on your local workstation), which is a <i>clone</i> of <code>remote:A</code> (on a remote server).</li>
+    <li>B: repository composed only of <code>local:B</code>, not being a clone (i.e. having no <i>remote</i>).</li>
+</ul>
+Now you would like to move <code>local:B</code> into <code>local:A</code> (as a 
+subdirectory, let's call it <code>local:A/B</code>), commit 
+it into <code>local:A</code> while keeping the histories of both repositories unchanged, and 
+finally push it to the server.</p>
+
+<p>The initial situation can be simplified as follows... </p>
+<pre>
+(local)                                      (remote)
+ |                                            |
+ +- A/ (gitted)     <---[is remote of]---     +- A/ (gitted)
+ |  |                                            |
+ |  +- fileA.txt                                 +- fileA.txt
+ |
+ +- B/ (gitted)
+    | 
+    +- fileB.txt
+</pre>
+
+<p>... and can easily be reproduced as follows: </p>
+<pre>
+<b>$ mkdir local</b>
+<b>$ mkdir remote</b>
+<b>$ mkdir local/B</b>
+<b>$ mkdir remote/A</b>
+# Note: we simply represent here the local workstation and the remote server by means of two directories. 
+
+<b>$ cd remote/A/</b>
+<b>remote/A$ git init</b>
+Initialized empty Git repository in remote/A/.git/
+<b>remote/A$ git config receive.denyCurrentBranch ignore</b>
+<b>remote/A$ echo A1 > fileA.txt</b>
+<b>remote/A$ git add -A</b>
+<b>remote/A$ git commit -m "A1"</b>
+[master (root-commit) 1c52613] A1
+ 1 file changed, 1 insertion(+)
+ create mode 100644 fileA.txt
+<b>remote/A$ echo A2 >> fileA.txt</b>
+<b>remote/A$ git add -u</b>
+<b>remote/A$ git commit -m "A2"</b>
+[master 140f6a3] A2
+ 1 file changed, 1 insertion(+)
+
+<b>remote/A$ cd ../../local/</b>
+<b>local$ git clone ../remote/A/</b>
+Cloning into 'A'...
+done.
+
+<b>local$ cd B/</b>
+<b>local/B$ git init</b>
+Initialized empty Git repository in local/B/.git/
+<b>local/B$ git config receive.denyCurrentBranch ignore</b>
+<b>local/B$ echo B1 > fileB.txt</b>
+<b>local/B$ git add -A</b>
+<b>local/B$ git commit -m "B1"</b>
+[master (root-commit) 23fcc61] B1
+ 1 file changed, 1 insertion(+)
+ create mode 100644 fileB.txt
+<b>local/B$ echo B2 >> fileB.txt</b>
+<b>local/B$ git add -u</b>
+<b>local/B$ git commit -m "B2"</b>
+[master f7d1064] B2
+ 1 file changed, 1 insertion(+)
+
+<b>local/B$ cd ../../</b>
+</pre>
+
+<h2>Explanation and goal</h2>
+
+<p>At this point it is very important to understand what a submodule is. 
+"B is a submodule of A" means basically:
+<ul>
+    <li>A maintains a list of its submodules, in which there is a simple reference to B.</li>
+    <li>A ignores the content of B (as if it were in the file <code>.gitignore</code>).</li>
+    <li>A knows what commit of B should be checked out.</li>
+    <li>B doesn't know anything about A. </li>
+</ul>
+In other words, simply moving <code>local:B</code> into <code>local:A</code> and making it a submodule of A
+is not enough to be able to push B, because: 
+<ul>
+    <li>If you then type <code>git push</code> in A, A won't push the content of B, as it ignores it.</li>
+    <li>If you then type <code>git push</code> in B, nothing will happen because B has no remote.</li>
+</ul>
+</p>
+
+<p>Thus you will need to define a remote for <code>local:B</code>, the goal 
+being to reach the following state: </p>
+<pre>
+(local)                                      (remote)
+ |                                            |
+ +- A/ (gitted)     <---[is remote of]---     +- A/ (gitted)
+    |                                            |
+    +- fileA.txt                                 +- fileA.txt
+    |                                            |
+    +- B/ (gitted)     <---[is remote of]---     +- B/ (gitted)
+       |                                            |
+       +- fileB.txt                                 +- fileB.txt
+</pre>
+
+<h2>Solution</h2>
+
+<p>To reach the goal, follow these steps: </p>
+<pre>
+# Move local:B into local:A :
+<b>$ cd local/</b>
+<b>local$ mv B A/</b>
+
+# You can see that A notices B:
+<b>local$ cd A/</b>
+<b>local/A$ git status</b>
+# On branch master
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#       B/
+nothing added to commit but untracked files present (use "git add" to track)
+
+# Declare B as a submodule: 
+<b>local/A$ git submodule add ./B</b>
+Adding existing repo at 'B' to the index
+
+# You can see that A has created a reference to B, considers B as a "file", and ignores its content: 
+<b>local/A$ git status</b>
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       new file:   .gitmodules
+#       new file:   B
+#
+<b>local/A$ cat .gitmodules</b>
+[submodule "B"]
+        path = B
+        url = ./B
+
+# Add a remote to B: 
+<b>local/A$ cd B/</b>
+<b>local/A/B$ git remote add --track master origin ../../../remote/A/B/</b>
+        
+# Commit the submodule: 
+<b>local/A/B$ cd ../</b>
+<b>local/A$ git commit -m "B added to A"</b>
+[master 2d0eb32] B added to A
+ 2 files changed, 4 insertions(+)
+ create mode 100644 .gitmodules
+ create mode 160000 B
+ 
+# Push A:
+<b>local/A$ git push</b>
+Counting objects: 4, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 354 bytes, done.
+Total 3 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (3/3), done.
+To ../remote/A/
+   16f2e57..2d0eb32  master -> master
+   
+# You can see that the content of B hasn't been pushed to the remote server, but only the (yet dangling) reference: 
+<b>local/A$ cd ../../remote/A/</b>
+<b>remote/A$ git reset --hard HEAD</b>
+HEAD is now at 2d0eb32 B added to A
+<b>remote/A$ cat .gitmodules</b>
+[submodule "B"]
+        path = B
+        url = ./B
+<b>remote/A$ cd B/</b>
+<b>remote/A/B$ ls</b>
+# Nothing
+
+# Declare remote:A:B as a new empty repository:
+<b>remote/A/B$ git init</b>
+Initialized empty Git repository in remote/A/B/.git/
+<b>remote/A/B$ git config receive.denyCurrentBranch ignore</b>
+
+# You can now go back to the local workstation and push from B: 
+<b>remote/A/B$ cd ../../../local/A/B/</b>
+<b>local/A/B$ git push origin master</b>
+Counting objects: 3, done.
+Writing objects: 100% (3/3), 213 bytes, done.
+Total 3 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (3/3), done.
+To ../../../remote/A/B/
+ * [new branch]      master -> master
+
+# You can see that the content of B has successfully been pushed: 
+<b>local/A/B$ cd ../../../remote/A/B/</b>
+<b>remote/A/B$ git reset --hard HEAD</b>
+HEAD is now at f7d1064 B2
+<b>remote/A/B$ ls</b>
+fileB.txt
+
+<b>local/A/B$ cd ../../../</b>
+</pre>
+
+<h2>Keeping working with the solution</h2>
+
+<p>This part is simply a basic reminder on how to make/pull/push changes to/from a
+submodule.</p>
+
+<p>Making changes on the local workstation and pushing them: </p>
+<pre>
+<b>$ cd local/A/B/</b>
+<b>local/A/B$ echo "B3" >> fileB.txt</b>
+<b>local/A/B$ git add -u</b>
+<b>local/A/B$ git commit -m "B3"</b>
+[master 4c9d670] B3
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+<b>local/A/B$ git push</b>
+Counting objects: 5, done.
+Writing objects: 100% (3/3), 246 bytes, done.
+Total 3 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (3/3), done.
+To ../../../remote/A/B/
+   xxxxxxx..4c9d670  master -> master
+<b>local/A/B$ cd ../</b>
+<b>local/A$ git status</b>
+# On branch master
+# Changes not staged for commit:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   B (new commits)
+#
+no changes added to commit (use "git add" and/or "git commit -a")
+<b>local/A$ git add -u</b>
+<b>local/A$ git commit -m "B3"</b>
+[master f772682] B3
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+<b>local/A$ git push</b>
+Counting objects: 3, done.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (2/2), 295 bytes, done.
+Total 2 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (2/2), done.
+To /home/aurelien/Documents/local/../remote/A
+   xxxxxxx..f772682  master -> master
+
+<b>local/A$ cd ../../remote/A/B/</b>
+<b>remote/A/B$ git reset --hard HEAD</b>
+HEAD is now at 4c9d670 B3
+<b>remote/A/B$ cd ../</b>
+<b>remote/A$ git reset --hard HEAD</b>
+HEAD is now at f772682 B3
+
+<b>remote/A$ cd ../../</b>
+</pre>
+
+<p>Making changes on the remote server and pulling them: </p>
+<pre>
+<b>$ cd remote/A/B/</b>
+<b>remote/A/B$ echo "B4" >> fileB.txt</b>
+<b>remote/A/B$ git add -u</b>
+<b>remote/A/B$ git commit -m "B4"</b>
+[master 691da00] B4
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+<b>remote/A/B$ cd ../</b>
+<b>remote/A$ git add -u</b>
+<b>remote/A$ git commit -m "B4"</b>
+[master e92ceb5] B4
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+<b>remote/A$ cd ../../local/A/B/</b>
+<b>local/A/B$ git pull</b>
+remote: Counting objects: 5, done.
+remote: Total 3 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (3/3), done.
+From ../../../remote/A/B
+   4c9d670..691da00  master     -> origin/master
+Updating 4c9d670..691da00
+Fast-forward
+ fileB.txt |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+<b>local/A/B$ cd ../</b>
+<b>local/A$ git pull</b>
+remote: Counting objects: 3, done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 2 (delta 0), reused 0 (delta 0)
+Unpacking objects: 100% (2/2), done.
+From /home/aurelien/Documents/local/../remote/A
+   f772682..e92ceb5  master     -> origin/master
+Updating f772682..e92ceb5
+Fast-forward
+ B |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+<b>local/A$ cd ../../</b>
+</pre>
+
+<h2>See Also / References</h2>
+<a target="_blank" href="http://caiustheory.com/adding-a-remote-to-existing-git-repo">[1] <i>Adding a remote to existing git repo</i>, Caius Durling</a><br />
+<a target="_blank" href="http://git-scm.com/book/en/Git-Tools-Submodules">[2] <i>Git Tools - Submodules</i></a><br />
+<a target="_blank" href="http://johnleach.co.uk/words/323/git-submodules-in-n-easy-steps">[3] <i>Git submodules in N easy steps</i>, John Leach</a><br />
+                        
+<!---------------------------------------------------- END OF CONTENT ------->
+
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>

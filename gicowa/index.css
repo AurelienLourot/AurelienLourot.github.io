@@ -1,0 +1,44 @@
+body {
+  font-size: 16px;
+}
+
+.screen {
+  margin-top: 3em;
+  margin-bottom: 3em;
+}
+
+pre {
+  font-size: 15px;
+  word-wrap: normal;
+}
+
+code {
+  font-size: 100%;
+  white-space: nowrap;
+}
+
+/* In this documentation, <hr/> is only a workaround for the reST generation, so hide them: */
+hr {
+  margin: 0px;
+  visibility: hidden;
+}
+
+.black {
+  font-weight: bold;
+  color: black;
+}
+
+.red {
+  font-weight: bold;
+  color: red;
+}
+
+.green {
+  font-weight: bold;
+  color: green;
+}
+
+.blue {
+  font-weight: bold;
+  color: blue;
+}
